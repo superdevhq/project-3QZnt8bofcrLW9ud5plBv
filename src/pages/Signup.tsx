@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { Eye, EyeOff, Mail, Lock, User, Github, Google } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Github, CircleUser } from "lucide-react";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -122,7 +122,7 @@ const Signup = () => {
                 onClick={() => handleSocialSignup("Google")}
                 disabled={isLoading}
               >
-                <Google className="mr-2 h-4 w-4" />
+                <CircleUser className="mr-2 h-4 w-4" />
                 Sign up with Google
               </Button>
               
