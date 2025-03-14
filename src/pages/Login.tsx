@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, Mail, Lock, Github, CircleUser } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -18,63 +19,68 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, signInWithGoogle, signInWithGithub, user } = useAuth();
+
+  // Parse return URL from query parameters
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get("returnUrl") || "/";
+  
+  // If there's an error in the URL, show it
+  const error = searchParams.get("error");
+  
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Authentication Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  // If user is already logged in, redirect to returnUrl
+  useEffect(() => {
+    if (user) {
+      navigate(returnUrl);
+    }
+  }, [user, navigate, returnUrl]);
+
+  // Store returnUrl in localStorage for OAuth flows
+  useEffect(() => {
+    if (returnUrl && returnUrl !== "/") {
+      localStorage.setItem("returnUrl", returnUrl);
+    }
+  }, [returnUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await signIn(email, password);
       
-      // Mock successful login
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user", JSON.stringify({ email, name: "Demo User" }));
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back to EduForge!",
-      });
-      
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      if (!error) {
+        navigate(returnUrl);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialLogin = async (provider: string) => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful login
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user", JSON.stringify({ 
-        email: "user@example.com", 
-        name: "Demo User",
-        provider 
-      }));
-      
-      toast({
-        title: "Login successful",
-        description: `You've logged in with ${provider}!`,
-      });
-      
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: `Could not login with ${provider}. Please try again.`,
-        variant: "destructive",
-      });
+      await signInWithGoogle();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGithub();
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +103,7 @@ const Login = () => {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => handleSocialLogin("Google")}
+                onClick={handleGoogleLogin}
                 disabled={isLoading}
               >
                 <CircleUser className="mr-2 h-4 w-4" />
@@ -107,7 +113,7 @@ const Login = () => {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => handleSocialLogin("GitHub")}
+                onClick={handleGithubLogin}
                 disabled={isLoading}
               >
                 <Github className="mr-2 h-4 w-4" />

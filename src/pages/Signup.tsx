@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, Mail, Lock, User, Github, CircleUser } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -21,6 +22,14 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signUp, signInWithGoogle, signInWithGithub, user } = useAuth();
+
+  // If user is already logged in, redirect to home
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,57 +55,30 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await signUp(email, password, { full_name: name });
       
-      // Mock successful registration
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user", JSON.stringify({ email, name }));
-      
-      toast({
-        title: "Account created",
-        description: "Welcome to EduForge! Your account has been created successfully.",
-      });
-      
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
-        variant: "destructive",
-      });
+      if (!error) {
+        // Redirect to login page with success message
+        navigate("/login?message=Please check your email to confirm your account");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialSignup = async (provider: string) => {
+  const handleGoogleSignup = async () => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful registration
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user", JSON.stringify({ 
-        email: "user@example.com", 
-        name: "Demo User",
-        provider 
-      }));
-      
-      toast({
-        title: "Account created",
-        description: `You've signed up with ${provider}!`,
-      });
-      
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: `Could not sign up with ${provider}. Please try again.`,
-        variant: "destructive",
-      });
+      await signInWithGoogle();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubSignup = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGithub();
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +101,7 @@ const Signup = () => {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => handleSocialSignup("Google")}
+                onClick={handleGoogleSignup}
                 disabled={isLoading}
               >
                 <CircleUser className="mr-2 h-4 w-4" />
@@ -129,7 +111,7 @@ const Signup = () => {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => handleSocialSignup("GitHub")}
+                onClick={handleGithubSignup}
                 disabled={isLoading}
               >
                 <Github className="mr-2 h-4 w-4" />
@@ -197,6 +179,7 @@ const Signup = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isLoading}
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -223,6 +206,7 @@ const Signup = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     disabled={isLoading}
+                    minLength={6}
                   />
                   <button
                     type="button"

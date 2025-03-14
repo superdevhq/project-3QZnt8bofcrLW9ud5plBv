@@ -1,11 +1,35 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search } from "lucide-react";
+import { 
+  Menu, 
+  X, 
+  Search, 
+  User,
+  LogOut,
+  BookOpen,
+  Settings,
+  ChevronDown
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50">
@@ -36,12 +60,56 @@ const Navbar = () => {
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" asChild>
-              <Link to="/login">Log in</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/signup">Sign up</Link>
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="max-w-[100px] truncate">{profile?.full_name || "User"}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile#courses" className="flex items-center cursor-pointer">
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      <span>My Courses</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile#settings" className="flex items-center cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/login">Log in</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/signup">Sign up</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -78,14 +146,54 @@ const Navbar = () => {
             >
               Teach
             </Link>
-            <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-              <Button variant="outline" asChild className="w-full">
-                <Link to="/login">Log in</Link>
-              </Button>
-              <Button asChild className="w-full">
-                <Link to="/signup">Sign up</Link>
-              </Button>
-            </div>
+            
+            {user ? (
+              <div className="space-y-2 pt-4 border-t border-border">
+                <Link
+                  to="/profile"
+                  className="flex items-center py-2 text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
+                <Link
+                  to="/profile#courses"
+                  className="flex items-center py-2 text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  My Courses
+                </Link>
+                <Link
+                  to="/profile#settings"
+                  className="flex items-center py-2 text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+                <button
+                  className="flex items-center w-full py-2 text-destructive hover:text-destructive/80 transition-colors"
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-2 pt-4 border-t border-border">
+                <Button variant="outline" asChild className="w-full">
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>Log in</Link>
+                </Button>
+                <Button asChild className="w-full">
+                  <Link to="/signup" onClick={() => setIsMenuOpen(false)}>Sign up</Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
